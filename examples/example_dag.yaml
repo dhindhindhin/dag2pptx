@@ -1,0 +1,151 @@
+slides:
+  - title: "ETL pipeline example"
+    header: |
+      A simple ETL example. START fans out to extract_a / extract_b,
+      runs through transform, and fans out again into load_mart / run_inference.
+    boxes:
+      - { id: start, col: 0, row: 1, label: START }
+      - { id: ex, col: 1, row: 0, label: extract_a, status: new }
+      - { id: ex2, col: 1, row: 2, label: extract_b }
+      - { id: tr, col: 2, row: 1, label: transform }
+      - { id: load, col: 3, row: 0, label: load_mart }
+      - { id: ml, col: 3, row: 2, label: run_inference, status: new }
+    edges:
+      - "start >> [ex, ex2] >> tr >> [load, ml]"
+
+  # ------------------------------------------------------------------
+  # Part 1: DAG-size demos
+  # ------------------------------------------------------------------
+
+  - title: "Small DAG  3 tasks"
+    header: |
+      Max 3 columns -> column width 4.1 inch, box 3.6 inch, font ~12pt.
+      Box size and font auto-scale with the column count.
+    boxes:
+      - { id: start, col: 0, row: 0, label: START }
+      - { id: proc, col: 1, row: 0, label: process_data }
+      - { id: done, col: 2, row: 0, label: END }
+    edges:
+      - "start >> proc >> done"
+
+  - title: "Medium DAG  6 tasks with fan-out"
+    header: |
+      Max 4 columns -> column width 3.08 inch, box 2.7 inch, font ~10.9pt.
+      New tasks are highlighted with the NEW badge.
+    boxes:
+      - { id: start, col: 0, row: 1, label: START }
+      - { id: ex, col: 1, row: 0, label: extract_a, status: new }
+      - { id: ex2, col: 1, row: 2, label: extract_b }
+      - { id: tr, col: 2, row: 1, label: transform }
+      - { id: load, col: 3, row: 0, label: load_mart }
+      - { id: ml, col: 3, row: 2, label: run_inference, status: new }
+    edges:
+      - "start >> [ex, ex2] >> tr >> [load, ml]"
+
+  - title: "Large DAG  10 tasks (migration scenario)"
+    header: |
+      Migration scenario: ingest_gcs is being retired, ingest_sql / ingest_stream
+      are added, unified_transform has changed attributes. The three badge
+      types - NEW (blue) / CHANGED (green) / DELETED (red + gray + dashed) -
+      make each status instantly distinguishable.
+    boxes:
+      - { id: start, col: 0, row: 2, label: START }
+      - { id: a1, col: 1, row: 0, label: ingest_api }
+      - { id: a2, col: 1, row: 1, label: ingest_gcs, status: deleted }
+      - { id: a3, col: 1, row: 3, label: ingest_sql, status: new }
+      - { id: a4, col: 1, row: 4, label: ingest_stream, status: new }
+      - { id: tr, col: 2, row: 2, label: unified_transform, status: changed }
+      - { id: v1, col: 3, row: 1, label: validate_schema }
+      - { id: v2, col: 3, row: 3, label: validate_biz_rules, status: new }
+      - { id: load, col: 4, row: 1, label: load_warehouse }
+      - { id: notify, col: 4, row: 3, label: notify_sla }
+    edges:
+      - "start >> [a1, a2, a3, a4] >> tr >> [v1, v2]"
+      - "v1 >> load"
+      - "v2 >> notify"
+
+  # ------------------------------------------------------------------
+  # Part 2: Arrow-pattern verification
+  # ------------------------------------------------------------------
+
+  - title: "Arrow pattern (1)  fan-out 1 up + 1 down (2 arrows)"
+    header: |
+      Just one pair -> one vertical lane (the center of the gap).
+      The upper and lower arrows don't overlap in y, so sharing one x is fine.
+    boxes:
+      - { id: s, col: 0, row: 1, label: SRC }
+      - { id: t0, col: 1, row: 0, label: "Upper T0" }
+      - { id: t1, col: 1, row: 2, label: "Lower T1" }
+    edges:
+      - "s >> [t0, t1]"
+
+  - title: "Arrow pattern (2)  fan-out 2 up + 2 down (4 arrows)"
+    header: |
+      The outer pair (T0 + T3) and the inner pair (T1 + T2) each align on
+      their own x column. 4 arrows are organized into 2 vertical lanes, no
+      crossings.
+    boxes:
+      - { id: s, col: 0, row: 2, label: SRC }
+      - { id: t0, col: 1, row: 0, label: "Far upper T0" }
+      - { id: t1, col: 1, row: 1, label: "Near upper T1" }
+      - { id: t2, col: 1, row: 3, label: "Near lower T2" }
+      - { id: t3, col: 1, row: 4, label: "Far lower T3" }
+    edges:
+      - "s >> [t0, t1, t2, t3]"
+
+  - title: "Arrow pattern (3)  fan-out 3 up + 3 down (6 arrows)"
+    header: |
+      Three pairs (T0+T5 / T1+T4 / T2+T3) align on three columns.
+      Symmetry holds as the count grows.
+    boxes:
+      - { id: s, col: 0, row: 3, label: SRC }
+      - { id: t0, col: 2, row: 0, label: T0 }
+      - { id: t1, col: 2, row: 1, label: T1 }
+      - { id: t2, col: 2, row: 2, label: T2 }
+      - { id: t3, col: 2, row: 4, label: T3 }
+      - { id: t4, col: 2, row: 5, label: T4 }
+      - { id: t5, col: 2, row: 6, label: T5 }
+    edges:
+      - "s >> [t0, t1, t2, t3, t4, t5]"
+
+  - title: "Arrow pattern (4)  fan-out 3 up + 1 down (asymmetric)"
+    header: |
+      Even when the up/down counts differ, the outer pair (T0 + T3) shares
+      the same x column. The remaining upward arrows T1 / T2 occupy single
+      lanes (2 columns + 1 column = 3 columns total).
+    boxes:
+      - { id: s, col: 0, row: 3, label: SRC }
+      - { id: t0, col: 1, row: 0, label: T0 }
+      - { id: t1, col: 1, row: 1, label: T1 }
+      - { id: t2, col: 1, row: 2, label: T2 }
+      - { id: t3, col: 1, row: 4, label: T3 }
+    edges:
+      - "s >> [t0, t1, t2, t3]"
+
+  - title: "Arrow pattern (5)  fan-in 2 up + 2 down (4 arrows)"
+    header: |
+      Fan-in is the mirror of fan-out. The inner pair (S1+S2) sits closer
+      to the source side, the outer pair (S0+S3) closer to the target.
+    boxes:
+      - { id: s0, col: 0, row: 0, label: "Far upper S0" }
+      - { id: s1, col: 0, row: 1, label: "Near upper S1" }
+      - { id: s2, col: 0, row: 3, label: "Near lower S2" }
+      - { id: s3, col: 0, row: 4, label: "Far lower S3" }
+      - { id: t, col: 1, row: 2, label: TGT }
+    edges:
+      - "[s0, s1, s2, s3] >> t"
+
+  - title: "Arrow pattern (6)  fan-in 3 up + 3 down (6 arrows)"
+    header: |
+      Fan-in keeps the same symmetry: three pairs align on three columns.
+      A clean example of a DAG merging neatly near TGT.
+    boxes:
+      - { id: s0, col: 0, row: 0, label: S0 }
+      - { id: s1, col: 0, row: 1, label: S1 }
+      - { id: s2, col: 0, row: 2, label: S2 }
+      - { id: s3, col: 0, row: 4, label: S3 }
+      - { id: s4, col: 0, row: 5, label: S4 }
+      - { id: s5, col: 0, row: 6, label: S5 }
+      - { id: t, col: 2, row: 3, label: TGT }
+    edges:
+      - "[s0, s1, s2, s3, s4, s5] >> t"
