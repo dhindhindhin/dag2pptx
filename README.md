@@ -18,11 +18,9 @@ dag2pptx/
 │       ├── __init__.py
 │       ├── renderer.py          # Rendering logic (auto layout, connectors)
 │       └── theme.py             # Appearance (colors, fonts, dimensions)
-├── examples/
-│   ├── example_dag.yaml         # Starter YAML (a sample set of 9 slides)
-│   └── example_dag.pptx         # The rendered output
-└── blog/
-    └── blog.mdx                 # Companion blog post
+└── examples/
+    ├── example_dag.yaml         # Starter YAML (a sample set of 9 slides)
+    └── example_dag.pptx         # The rendered output
 ```
 
 ## Separation of concerns
